@@ -1,4 +1,5 @@
 import GlobalProvider from "@/lib/global-provider";
+import { UserDataProvider } from "@/lib/user-data";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
@@ -26,7 +27,9 @@ export default function RootLayout() {
 
   return (
     <GlobalProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <UserDataProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </UserDataProvider>
     </GlobalProvider>
   );
 }

@@ -1,8 +1,9 @@
 import { settings } from "@/constants/data";
-import images from "@/constants/images";
 import icons from "@/constants/icons";
+import images from "@/constants/images";
 import { logout } from "@/lib/appwrite";
 import { useGlobalContext } from "@/lib/global-provider";
+import { useUserData } from "@/lib/user-data";
 import React from "react";
 import {
   Alert,
@@ -60,6 +61,8 @@ const Profile = () => {
     }
   };
 
+  const { wishlist, favorites, bookings } = useUserData();
+
   return (
     <SafeAreaView className="bg-white flex-1">
       <ScrollView
@@ -100,6 +103,47 @@ const Profile = () => {
           {settings.slice(2).map((item, index) => (
             <SettingsItem key={index} {...item} onPress={() => {}} />
           ))}
+        </View>
+
+        <View className="flex flex-col mt-5 border-t pt-5 border-primary-200">
+          <Text className="text-lg font-rubik-bold text-black-300 mb-2">
+            Favorites ({favorites.size})
+          </Text>
+          {favorites.size === 0 ? (
+            <Text className="text-black-200">No favorites yet.</Text>
+          ) : (
+            Array.from(favorites).map((id) => (
+              <Text key={id} className="text-black-300">
+                • {id}
+              </Text>
+            ))
+          )}
+
+          <Text className="text-lg font-rubik-bold text-black-300 mt-4 mb-2">
+            Wishlist ({wishlist.size})
+          </Text>
+          {wishlist.size === 0 ? (
+            <Text className="text-black-200">No wishlisted items.</Text>
+          ) : (
+            Array.from(wishlist).map((id) => (
+              <Text key={id} className="text-black-300">
+                • {id}
+              </Text>
+            ))
+          )}
+
+          <Text className="text-lg font-rubik-bold text-black-300 mt-4 mb-2">
+            Bookings ({bookings.length})
+          </Text>
+          {bookings.length === 0 ? (
+            <Text className="text-black-200">No bookings yet.</Text>
+          ) : (
+            bookings.map((b) => (
+              <Text key={b.id} className="text-black-300">
+                • {b.propertyId}: {b.checkIn} → {b.checkOut} (${b.total})
+              </Text>
+            ))
+          )}
         </View>
 
         <View className="flex flex-col mt-5 border-t pt-5 border-primary-200">

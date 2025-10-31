@@ -1,13 +1,111 @@
-import { useLocalSearchParams } from "expo-router";
-import React from "react";
-import { Text, View } from "react-native";
+import GalleryCarousel from "@/components/GalleryCarousel";
+import MapPreview from "@/components/MapPreview";
+import Reviews from "@/components/Reviews";
+import { getPropertiesByIds } from "@/lib/appwrite";
+import { useAppwrite } from "@/lib/useAppwrite";
+import { useUserData } from "@/lib/user-data";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const Property = () => {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { wishlist, favorites, toggleFavorite, toggleWishlist } = useUserData();
+  const { data, loading, refetch } = useAppwrite<any[], string[]>({
+    fn: getPropertiesByIds,
+    params: [id as string] as any,
+    skip: true,
+  });
+
+  useEffect(() => {
+    if (id) refetch([id] as any);
+  }, [id, refetch]);
+
+  const item = data?.[0];
+
+  if (loading || !item) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" className="text-primary-300" />
+      </View>
+    );
+  }
+
+  const wished = wishlist.has(item.$id);
+  const faved = favorites.has(item.$id);
+
   return (
-    <View>
-      <Text>Property {id}</Text>
-    </View>
+    <ScrollView
+      className="flex-1 bg-white"
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
+      {Array.isArray((item as any).gallery) &&
+      (item as any).gallery.length > 0 ? (
+        <GalleryCarousel images={(item as any).gallery} />
+      ) : (
+        <Image source={{ uri: item.image }} className="w-full h-64" />
+      )}
+      <View className="px-5 py-4">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-xl font-rubik-bold text-black-300">
+            {item.name}
+          </Text>
+          <Text className="text-base font-rubik text-black-100">
+            ${item.price}/night
+          </Text>
+        </View>
+        <Text className="text-black-100 mt-2">{item.address}</Text>
+        <MapPreview address={item.address} />
+        <Text className="text-black-100 mt-1">Rating: {item.rating}★</Text>
+
+        <View className="flex-row mt-4 gap-3">
+          <TouchableOpacity
+            onPress={() => toggleWishlist(item.$id)}
+            className={`px-4 py-2 rounded-md ${
+              wished ? "bg-black-300" : "bg-primary-100"
+            }`}
+          >
+            <Text className={`${wished ? "text-white" : "text-black-300"}`}>
+              {wished ? "Wishlisted" : "Add to Wishlist"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => toggleFavorite(item.$id)}
+            className={`px-4 py-2 rounded-md ${
+              faved ? "bg-black-300" : "bg-primary-100"
+            }`}
+          >
+            <Text className={`${faved ? "text-white" : "text-black-300"}`}>
+              {faved ? "Favorited" : "Add to Favorites"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="flex-row mt-4 gap-3">
+          <TouchableOpacity
+            onPress={() => router.push(`/messages/${item.$id}`)}
+            className="bg-primary-100 px-4 py-2 rounded-md"
+          >
+            <Text className="text-black-300">Message Host</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push(`/properties/${item.$id}/book`)}
+            className="bg-primary-300 px-4 py-2 rounded-md"
+          >
+            <Text className="text-white font-rubik-medium">Book Now</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Reviews propertyId={item.$id} />
+      </View>
+    </ScrollView>
   );
 };
 

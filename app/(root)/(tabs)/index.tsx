@@ -8,7 +8,7 @@ import { getLatestProperties, getProperties } from "@/lib/appwrite";
 import { useGlobalContext } from "@/lib/global-provider";
 import { useAppwrite } from "@/lib/useAppwrite";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -34,7 +34,15 @@ type Property = Models.Document & {
 
 export default function Index() {
   const { user } = useGlobalContext();
-  const params = useLocalSearchParams<{ filter?: string; query?: string }>();
+  const params = useLocalSearchParams<{
+    filter?: string;
+    query?: string;
+    priceMin?: string;
+    priceMax?: string;
+    minRating?: string;
+  }>();
+  const [limit, setLimit] = React.useState(6);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const { data: latestProperties, loading: latestPropertiesLoading } =
     useAppwrite<Property[], Record<string, never>>({
@@ -45,17 +53,28 @@ export default function Index() {
     data: properties,
     refetch,
     loading,
-  } = useAppwrite<Property[], { filter: string; query: string; limit: number }>(
+  } = useAppwrite<
+    Property[],
     {
-      fn: getProperties,
-      params: {
-        filter: params.filter || "All",
-        query: params.query || "",
-        limit: 6,
-      },
-      skip: true,
+      filter: string;
+      query: string;
+      limit: number;
+      priceMin?: number;
+      priceMax?: number;
+      minRating?: number;
     }
-  );
+  >({
+    fn: getProperties,
+    params: {
+      filter: params.filter || "All",
+      query: params.query || "",
+      limit,
+      priceMin: params.priceMin ? Number(params.priceMin) : undefined,
+      priceMax: params.priceMax ? Number(params.priceMax) : undefined,
+      minRating: params.minRating ? Number(params.minRating) : undefined,
+    },
+    skip: true,
+  });
 
   const handleCardPress = (id: string) => {
     router.push(`/properties/${id}`);
@@ -65,9 +84,38 @@ export default function Index() {
     refetch({
       filter: params.filter || "All",
       query: params.query || "",
-      limit: 6,
+      limit,
+      priceMin: params.priceMin ? Number(params.priceMin) : undefined,
+      priceMax: params.priceMax ? Number(params.priceMax) : undefined,
+      minRating: params.minRating ? Number(params.minRating) : undefined,
     });
-  }, [params.filter, params.query, refetch]);
+  }, [
+    params.filter,
+    params.query,
+    params.priceMin,
+    params.priceMax,
+    params.minRating,
+    limit,
+    refetch,
+  ]);
+
+  const onEndReached = () => {
+    if (loading) return;
+    setLimit((l) => l + 6);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch({
+      filter: params.filter || "All",
+      query: params.query || "",
+      limit,
+      priceMin: params.priceMin ? Number(params.priceMin) : undefined,
+      priceMax: params.priceMax ? Number(params.priceMax) : undefined,
+      minRating: params.minRating ? Number(params.minRating) : undefined,
+    });
+    setRefreshing(false);
+  };
 
   return (
     <SafeAreaView className="bg-white flex-1">
@@ -81,6 +129,10 @@ export default function Index() {
         contentContainerStyle={{ paddingBottom: 32 }}
         columnWrapperStyle={{ gap: 5, paddingHorizontal: 5, flex: 1 }}
         showsVerticalScrollIndicator={false}
+        onEndReachedThreshold={0.5}
+        onEndReached={onEndReached}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListFooterComponent={<View className="h-20" />}
         ListEmptyComponent={
           loading ? (
@@ -93,6 +145,13 @@ export default function Index() {
         }
         ListHeaderComponent={
           <View className="px-5 py-4">
+            {/* Seed Data Button */}
+            {/* <TouchableOpacity
+              className="mb-4 bg-primary-300 px-4 py-2 rounded-md self-center"
+              onPress={() => router.push("/dev/seed")}
+            >
+              <Text className="text-white font-rubik-medium">Seed Data</Text>
+            </TouchableOpacity> */}
             <View className="flex flex-row items-center justify-between mt-5">
               <View className="flex flex-row items-center">
                 <Image

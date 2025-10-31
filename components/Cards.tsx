@@ -1,6 +1,7 @@
 import icons from "@/constants/icons";
 import images from "@/constants/images";
-import React from "react";
+import { useUserData } from "@/lib/user-data";
+import React, { useMemo } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { Models } from "react-native-appwrite";
 
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export const FeaturedCard = ({ item, onPress }: Props) => {
+  const { wishlist, toggleWishlist } = useUserData();
+  const wished = useMemo(() => wishlist.has(item.$id), [wishlist, item.$id]);
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -47,7 +50,13 @@ export const FeaturedCard = ({ item, onPress }: Props) => {
           <Text className="text-xl font-rubik-extrabold text-white">
             ${item.price}
           </Text>
-          <Image source={icons.heart} className="size-5" />
+          <TouchableOpacity onPress={() => toggleWishlist(item.$id)}>
+            <Image
+              source={icons.heart}
+              className="size-5"
+              tintColor={wished ? "#FF5A5F" : "#ffffff"}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -55,6 +64,8 @@ export const FeaturedCard = ({ item, onPress }: Props) => {
 };
 
 export const Card = ({ item, onPress }: Props) => {
+  const { wishlist, toggleWishlist } = useUserData();
+  const wished = useMemo(() => wishlist.has(item.$id), [wishlist, item.$id]);
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -80,11 +91,13 @@ export const Card = ({ item, onPress }: Props) => {
           <Text className="text-base font-rubik-bold text-primary-300">
             ${item.price}
           </Text>
-          <Image
-            source={icons.heart}
-            className="w-5 h-5 mr-2"
-            tintColor="#191d31"
-          />
+          <TouchableOpacity onPress={() => toggleWishlist(item.$id)}>
+            <Image
+              source={icons.heart}
+              className="w-5 h-5 mr-2"
+              tintColor={wished ? "#FF5A5F" : "#191d31"}
+            />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>

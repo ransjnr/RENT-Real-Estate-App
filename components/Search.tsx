@@ -1,3 +1,4 @@
+import AdvancedFilters from "@/components/AdvancedFilters";
 import icons from "@/constants/icons";
 import { router, useLocalSearchParams, usePathname } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ const Search = () => {
   const path = usePathname();
   const params = useLocalSearchParams<{ query?: string }>();
   const [search, setSearch] = useState(params.query || "");
+  const [showFilters, setShowFilters] = useState(false);
 
   const debouncedSearch = useDebouncedCallback(
     (text: string) => router.setParams({ query: text }),
@@ -34,9 +36,16 @@ const Search = () => {
           className="flex-1 ml-2 text-sm font-rubik text-black-300"
         />
       </View>
-      <TouchableOpacity className="flex-1 flex flex-row items-center justify-end z-50">
+      <TouchableOpacity
+        className="flex-1 flex flex-row items-center justify-end z-50"
+        onPress={() => setShowFilters(true)}
+      >
         <Image source={icons.filter} className="size-5" />
       </TouchableOpacity>
+      <AdvancedFilters
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+      />
     </View>
   );
 };

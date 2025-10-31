@@ -4,7 +4,7 @@ import { Image, Text, View } from "react-native";
 
 const NoResults = () => {
   return (
-    <View className="flex-1 items-center my-5">
+    <View className="items-center my-5">
       <Image
         source={images.noResult}
         className="w-11/12 h-80"

@@ -25,10 +25,34 @@ export const config = {
 
 export const client = new Client();
 
-client
-  .setEndpoint(config.endpoint!)
-  .setProject(config.projectId!)
-  .setPlatform(config.platform!);
+// Validate and set client configuration defensively to avoid runtime "startsWith" on undefined
+(() => {
+  const endpoint =
+    typeof config.endpoint === "string" ? config.endpoint : undefined;
+  const projectId =
+    typeof config.projectId === "string" ? config.projectId : undefined;
+  const platform = config.platform;
+
+  if (!endpoint || endpoint.trim() === "") {
+    console.warn(
+      "[Appwrite] EXPO_PUBLIC_APPWRITE_ENDPOINT is missing. Skipping client.setEndpoint()."
+    );
+  } else {
+    client.setEndpoint(endpoint);
+  }
+
+  if (!projectId || projectId.trim() === "") {
+    console.warn(
+      "[Appwrite] EXPO_PUBLIC_APPWRITE_PROJECT_ID is missing. Skipping client.setProject()."
+    );
+  } else {
+    client.setProject(projectId);
+  }
+
+  if (typeof platform === "string" && platform.trim() !== "") {
+    client.setPlatform(platform);
+  }
+})();
 
 export const avatar = new Avatars(client);
 export const account = new Account(client);
@@ -151,6 +175,9 @@ export async function getProperties(params?: {
   filter: string;
   query: string;
   limit?: number;
+  priceMin?: number;
+  priceMax?: number;
+  minRating?: number;
 }): Promise<
   (Models.Document & {
     image: string;
@@ -161,7 +188,14 @@ export async function getProperties(params?: {
     type: string;
   })[]
 > {
-  const { filter = "", query = "", limit } = params || {};
+  const {
+    filter = "",
+    query = "",
+    limit,
+    priceMin,
+    priceMax,
+    minRating,
+  } = params || {};
   console.log("Search params:", { filter, query, limit });
 
   try {
@@ -205,6 +239,29 @@ export async function getProperties(params?: {
       console.log("No search query provided");
     }
 
+    // Price range
+    if (
+      typeof priceMin === "number" &&
+      typeof priceMax === "number" &&
+      priceMax >= priceMin
+    ) {
+      // between is inclusive
+      // @ts-ignore
+      buildQuery.push(Query.between("price", priceMin, priceMax));
+    } else if (typeof priceMin === "number") {
+      // @ts-ignore
+      buildQuery.push(Query.greaterThanEqual("price", priceMin));
+    } else if (typeof priceMax === "number") {
+      // @ts-ignore
+      buildQuery.push(Query.lessThanEqual("price", priceMax));
+    }
+
+    // Minimum rating
+    if (typeof minRating === "number") {
+      // @ts-ignore
+      buildQuery.push(Query.greaterThanEqual("rating", minRating));
+    }
+
     if (limit) {
       buildQuery.push(Query.limit(limit));
     }
@@ -228,6 +285,37 @@ export async function getProperties(params?: {
     })[];
   } catch (error) {
     console.error("Search error:", error);
+    return [];
+  }
+}
+
+export async function getPropertiesByIds(ids: string[]): Promise<
+  (Models.Document & {
+    image: string;
+    name: string;
+    address: string;
+    price: number;
+    rating: number;
+    type: string;
+  })[]
+> {
+  if (!ids || ids.length === 0) return [];
+  try {
+    const result = await databases.listDocuments(
+      config.databaseId!,
+      config.propertiesCollectionId!,
+      [Query.equal("$id", ids)]
+    );
+    return result.documents as unknown as (Models.Document & {
+      image: string;
+      name: string;
+      address: string;
+      price: number;
+      rating: number;
+      type: string;
+    })[];
+  } catch (error) {
+    console.error("getPropertiesByIds error:", error);
     return [];
   }
 }

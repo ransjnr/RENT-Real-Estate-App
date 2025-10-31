@@ -16,9 +16,9 @@ const COLLECTIONS = {
 
 const propertyTypes = [
   "House",
-  "Townhouse",
+  "Townhome",
   "Condo",
-  "Duplex",
+  "Duplexe",
   "Studio",
   "Villa",
   "Apartment",
@@ -31,7 +31,7 @@ const facilities = [
   "Sports-Center",
   "Cutlery",
   "Gym",
-  "Swimming-Pool",
+  "Swimming-pool",
   "Wifi",
   "Pet-Center",
 ];

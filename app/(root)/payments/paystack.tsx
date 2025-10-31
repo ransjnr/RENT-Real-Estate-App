@@ -1,5 +1,9 @@
 import { useGlobalContext } from "@/lib/global-provider";
-import { buildPaystackInlineHtml, paymentsConfig } from "@/lib/payments";
+import {
+  buildPaystackInlineHtml,
+  defaultCurrency,
+  paymentsConfig,
+} from "@/lib/payments";
 import { useUserData } from "@/lib/user-data";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
@@ -14,7 +18,7 @@ try {
 
 export default function PaystackScreen() {
   const { user } = useGlobalContext();
-  const { addBooking } = useUserData();
+  const { addBooking, addNotification } = useUserData();
   const params = useLocalSearchParams<{
     propertyId: string;
     checkIn: string;
@@ -37,7 +41,7 @@ export default function PaystackScreen() {
       email,
       amountKobo,
       reference,
-      currency: "NGN",
+      currency: defaultCurrency,
       metadata: {
         propertyId: params.propertyId,
         checkIn: params.checkIn,
@@ -67,9 +71,15 @@ export default function PaystackScreen() {
           total,
           createdAt: Date.now(),
         });
+        await addNotification({
+          title: "Booking confirmed",
+          body: "Your booking is confirmed. Check your email for details and next steps.",
+          propertyId: params.propertyId,
+          referenceId: reference,
+        });
         router.replace({
           pathname: "/booking/confirmation",
-          params: { id: reference } as any,
+          params: { id: reference, propertyId: params.propertyId } as any,
         });
       } else if (data.event === "closed") {
         Alert.alert("Payment cancelled");
@@ -109,4 +119,3 @@ export default function PaystackScreen() {
     />
   );
 }
-

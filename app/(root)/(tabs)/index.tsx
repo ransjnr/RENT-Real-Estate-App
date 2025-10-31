@@ -7,6 +7,7 @@ import images from "@/constants/images";
 import { getLatestProperties, getProperties } from "@/lib/appwrite";
 import { useGlobalContext } from "@/lib/global-provider";
 import { useAppwrite } from "@/lib/useAppwrite";
+import { useUserData } from "@/lib/user-data";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
 import {
@@ -34,12 +35,15 @@ type Property = Models.Document & {
 
 export default function Index() {
   const { user } = useGlobalContext();
+  const { unreadNotifications } = useUserData();
   const params = useLocalSearchParams<{
     filter?: string;
     query?: string;
     priceMin?: string;
     priceMax?: string;
     minRating?: string;
+    justBooked?: string;
+    propertyId?: string;
   }>();
   const [limit, setLimit] = React.useState(6);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -168,9 +172,42 @@ export default function Index() {
                   </Text>
                 </View>
               </View>
-              <Image source={icons.bell} className="size-6" />
+              <TouchableOpacity
+                onPress={() => {
+                  router.push({ pathname: "/notifications" });
+                }}
+                className="relative"
+              >
+                <Image source={icons.bell} className="size-6" />
+                {unreadNotifications > 0 ? (
+                  <View className="absolute -top-1 -right-1 bg-primary-300 rounded-full w-3 h-3" />
+                ) : null}
+              </TouchableOpacity>
             </View>
             <Search />
+            {params.justBooked === "1" ? (
+              <View className="mt-3 bg-primary-100 rounded-md p-3">
+                <Text className="text-black-300 font-rubik-medium">
+                  Booking confirmed
+                </Text>
+                <Text className="text-black-200">
+                  Check your email for details. You can message your host
+                  anytime.
+                </Text>
+                {params.propertyId ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push(`/messages/${params.propertyId}`)
+                    }
+                    className="mt-2 bg-white px-3 py-2 rounded-md self-start"
+                  >
+                    <Text className="text-black-300 font-rubik-medium">
+                      Message Host
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : null}
             <View className="my-5">
               <View className="flex flex-row items-center justify-between">
                 <Text className="text-xl font-rubik-bold text-black-300">

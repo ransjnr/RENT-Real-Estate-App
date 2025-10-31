@@ -2,6 +2,9 @@ export const paymentsConfig = {
   paystackPublicKey: process.env.EXPO_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
 };
 
+export const defaultCurrency = "GHS"; // Paystack-supported: NGN, GHS, ZAR, USD (account dependent)
+export const currencySymbol = "₵"; // Ghanaian Cedi symbol for display
+
 export function buildPaystackInlineHtml(opts: {
   publicKey: string;
   email: string;
@@ -15,7 +18,7 @@ export function buildPaystackInlineHtml(opts: {
     email,
     amountKobo,
     reference,
-    currency = "NGN",
+    currency = defaultCurrency,
     metadata,
   } = opts;
   const metaStr = metadata ? JSON.stringify(metadata) : "{}";
@@ -46,4 +49,3 @@ export function buildPaystackInlineHtml(opts: {
   </script>
   </body></html>`;
 }
-

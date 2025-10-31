@@ -1,5 +1,6 @@
 import Calendar from "@/components/Calendar";
 import { getPropertiesByIds } from "@/lib/appwrite";
+import { currencySymbol } from "@/lib/payments";
 import { useAppwrite } from "@/lib/useAppwrite";
 import { useUserData } from "@/lib/user-data";
 import { router, useLocalSearchParams } from "expo-router";
@@ -58,7 +59,7 @@ export default function BookProperty() {
       return;
     }
     router.push({
-      pathname: "/payments/paystack",
+      pathname: "/booking/review",
       params: {
         propertyId: id as string,
         checkIn,
@@ -132,10 +133,12 @@ export default function BookProperty() {
             Booking Summary
           </Text>
           <Text className="text-black-300 mt-2">
-            ${price} x {nights} nights
+            {currencySymbol}
+            {price} x {nights} nights
           </Text>
           <Text className="text-black-300 font-rubik-bold mt-1">
-            Total: ${total}
+            Total: {currencySymbol}
+            {total}
           </Text>
         </View>
 

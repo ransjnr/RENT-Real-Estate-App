@@ -11,7 +11,7 @@ import {
 } from "react-native-appwrite";
 
 export const config = {
-  platform: "com.bst.highestate",
+  platform: "com.bst.rent",
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT,
   projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
   databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID,
@@ -105,6 +105,17 @@ export async function login() {
 export async function logout() {
   try {
     await account.deleteSession("current");
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+export async function updateUserName(name: string) {
+  try {
+    if (!name || name.trim().length < 2) throw new Error("Invalid name");
+    await account.updateName(name.trim());
     return true;
   } catch (error) {
     console.error(error);

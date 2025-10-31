@@ -37,12 +37,24 @@ type Review = {
   createdAt: number;
 };
 
+type NotificationItem = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: number;
+  read?: boolean;
+  propertyId?: string;
+  referenceId?: string;
+};
+
 type UserDataContextType = {
   wishlist: Set<PropertyId>;
   favorites: Set<PropertyId>;
   messages: Record<PropertyId, Message[]>;
   bookings: Booking[];
   reviews: Record<PropertyId, Review[]>;
+  notifications: NotificationItem[];
+  unreadNotifications: number;
   toggleWishlist: (id: PropertyId) => Promise<void>;
   toggleFavorite: (id: PropertyId) => Promise<void>;
   sendMessage: (
@@ -52,6 +64,10 @@ type UserDataContextType = {
   ) => Promise<void>;
   addBooking: (booking: Booking) => Promise<void>;
   addReview: (review: Omit<Review, "id" | "createdAt">) => Promise<void>;
+  addNotification: (
+    n: Omit<NotificationItem, "id" | "createdAt" | "read">
+  ) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
   clearAll: () => Promise<void>;
 };
 
@@ -65,6 +81,7 @@ const STORAGE_KEYS = {
   messages: "userdata:messages",
   bookings: "userdata:bookings",
   reviews: "userdata:reviews",
+  notifications: "userdata:notifications",
 };
 
 export const UserDataProvider = ({
@@ -77,22 +94,25 @@ export const UserDataProvider = ({
   const [messages, setMessages] = useState<Record<PropertyId, Message[]>>({});
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviews, setReviews] = useState<Record<PropertyId, Review[]>>({});
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const [w, f, m, b, r] = await Promise.all([
+        const [w, f, m, b, r, n] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.wishlist),
           AsyncStorage.getItem(STORAGE_KEYS.favorites),
           AsyncStorage.getItem(STORAGE_KEYS.messages),
           AsyncStorage.getItem(STORAGE_KEYS.bookings),
           AsyncStorage.getItem(STORAGE_KEYS.reviews),
+          AsyncStorage.getItem(STORAGE_KEYS.notifications),
         ]);
         if (w) setWishlist(new Set(JSON.parse(w)));
         if (f) setFavorites(new Set(JSON.parse(f)));
         if (m) setMessages(JSON.parse(m));
         if (b) setBookings(JSON.parse(b));
         if (r) setReviews(JSON.parse(r));
+        if (n) setNotifications(JSON.parse(n));
       } catch {}
     })();
   }, []);
@@ -103,7 +123,8 @@ export const UserDataProvider = ({
       f: Set<PropertyId>,
       m: Record<PropertyId, Message[]>,
       b: Booking[],
-      r: Record<PropertyId, Review[]>
+      r: Record<PropertyId, Review[]>,
+      n: NotificationItem[]
     ) => {
       await Promise.all([
         AsyncStorage.setItem(
@@ -117,6 +138,7 @@ export const UserDataProvider = ({
         AsyncStorage.setItem(STORAGE_KEYS.messages, JSON.stringify(m)),
         AsyncStorage.setItem(STORAGE_KEYS.bookings, JSON.stringify(b)),
         AsyncStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(r)),
+        AsyncStorage.setItem(STORAGE_KEYS.notifications, JSON.stringify(n)),
       ]);
     },
     []
@@ -127,11 +149,18 @@ export const UserDataProvider = ({
       setWishlist((prev) => {
         const next = new Set(prev);
         next.has(id) ? next.delete(id) : next.add(id);
-        persist(next, favorites, messages, bookings, reviews).catch(() => {});
+        persist(
+          next,
+          favorites,
+          messages,
+          bookings,
+          reviews,
+          notifications
+        ).catch(() => {});
         return next;
       });
     },
-    [favorites, messages, bookings, reviews, persist]
+    [favorites, messages, bookings, reviews, notifications, persist]
   );
 
   const toggleFavorite = useCallback(
@@ -139,11 +168,18 @@ export const UserDataProvider = ({
       setFavorites((prev) => {
         const next = new Set(prev);
         next.has(id) ? next.delete(id) : next.add(id);
-        persist(wishlist, next, messages, bookings, reviews).catch(() => {});
+        persist(
+          wishlist,
+          next,
+          messages,
+          bookings,
+          reviews,
+          notifications
+        ).catch(() => {});
         return next;
       });
     },
-    [wishlist, messages, bookings, reviews, persist]
+    [wishlist, messages, bookings, reviews, notifications, persist]
   );
 
   const sendMessage = useCallback(
@@ -158,22 +194,36 @@ export const UserDataProvider = ({
           createdAt: Date.now(),
         });
         const next = { ...prev, [propertyId]: list };
-        persist(wishlist, favorites, next, bookings, reviews).catch(() => {});
+        persist(
+          wishlist,
+          favorites,
+          next,
+          bookings,
+          reviews,
+          notifications
+        ).catch(() => {});
         return next;
       });
     },
-    [wishlist, favorites, bookings, reviews, persist]
+    [wishlist, favorites, bookings, reviews, notifications, persist]
   );
 
   const addBooking = useCallback(
     async (booking: Booking) => {
       setBookings((prev) => {
         const next = [booking, ...prev];
-        persist(wishlist, favorites, messages, next, reviews).catch(() => {});
+        persist(
+          wishlist,
+          favorites,
+          messages,
+          next,
+          reviews,
+          notifications
+        ).catch(() => {});
         return next;
       });
     },
-    [wishlist, favorites, messages, reviews, persist]
+    [wishlist, favorites, messages, reviews, notifications, persist]
   );
 
   const addReview = useCallback(
@@ -188,12 +238,48 @@ export const UserDataProvider = ({
           createdAt: Date.now(),
         });
         const next = { ...prev, [review.propertyId]: list };
-        persist(wishlist, favorites, messages, bookings, next).catch(() => {});
+        persist(
+          wishlist,
+          favorites,
+          messages,
+          bookings,
+          next,
+          notifications
+        ).catch(() => {});
         return next;
       });
     },
-    [wishlist, favorites, messages, bookings, persist]
+    [wishlist, favorites, messages, bookings, notifications, persist]
   );
+
+  const addNotification = useCallback(
+    async (n: Omit<NotificationItem, "id" | "createdAt" | "read">) => {
+      setNotifications((prev) => {
+        const item: NotificationItem = {
+          ...n,
+          id: Math.random().toString(36).slice(2),
+          createdAt: Date.now(),
+          read: false,
+        };
+        const next = [item, ...prev];
+        persist(wishlist, favorites, messages, bookings, reviews, next).catch(
+          () => {}
+        );
+        return next;
+      });
+    },
+    [wishlist, favorites, messages, bookings, reviews, persist]
+  );
+
+  const markAllNotificationsRead = useCallback(async () => {
+    setNotifications((prev) => {
+      const next = prev.map((n) => ({ ...n, read: true }));
+      persist(wishlist, favorites, messages, bookings, reviews, next).catch(
+        () => {}
+      );
+      return next;
+    });
+  }, [wishlist, favorites, messages, bookings, reviews, persist]);
 
   const clearAll = useCallback(async () => {
     setWishlist(new Set());
@@ -216,11 +302,15 @@ export const UserDataProvider = ({
       messages,
       bookings,
       reviews,
+      notifications,
+      unreadNotifications: notifications.filter((n) => !n.read).length,
       toggleWishlist,
       toggleFavorite,
       sendMessage,
       addBooking,
       addReview,
+      addNotification,
+      markAllNotificationsRead,
       clearAll,
     }),
     [
@@ -229,11 +319,14 @@ export const UserDataProvider = ({
       messages,
       bookings,
       reviews,
+      notifications,
       toggleWishlist,
       toggleFavorite,
       sendMessage,
       addBooking,
       addReview,
+      addNotification,
+      markAllNotificationsRead,
       clearAll,
     ]
   );

@@ -40,14 +40,14 @@ const SignIn = () => {
         />
         <View className="px-10">
           <Text className="text-base text-center uppercase font-rubik text-black-200">
-            Welcome to highestate
+            Welcome to RENT
           </Text>
           <Text className="text-3xl font-rubik-bold text-black-300 text-center mt-2">
             Let&apos;s Get You Closer to {"\n"}{" "}
             <Text className="text-primary-300">Your Dream Home</Text>
           </Text>
           <Text className="text-lg font-rubik text-balck-200 text-center mt-12">
-            Login to highestate with Google
+            Login to RENT with Google
           </Text>
           <TouchableOpacity
             onPress={handleLogin}

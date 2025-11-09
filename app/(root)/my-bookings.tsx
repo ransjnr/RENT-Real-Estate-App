@@ -1,4 +1,5 @@
 import { FeaturedCard } from "@/components/Cards";
+import images from "@/constants/images";
 import { getPropertiesByIds } from "@/lib/appwrite";
 import { useAppwrite } from "@/lib/useAppwrite";
 import { useUserData } from "@/lib/user-data";
@@ -7,12 +8,30 @@ import React from "react";
 import {
   FlatList,
   Image,
+  ImageSourcePropType,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Helper function to get image source - handles both local assets (number) and URIs (string)
+const getImageSource = (image: string | number): ImageSourcePropType => {
+  if (typeof image === "number") {
+    // Local asset (require)
+    return image;
+  }
+  if (
+    typeof image === "string" &&
+    (image.startsWith("http") || image.startsWith("https"))
+  ) {
+    // Remote URI
+    return { uri: image };
+  }
+  // Fallback to local asset if it's a string but not a URI
+  return images.newYork;
+};
 
 type TabKey = "Bookings" | "Favorites" | "Wishlist";
 
@@ -36,7 +55,8 @@ export default function MyBookingsScreen() {
 
   const { data: propsData } = useAppwrite<any[], string[]>({
     fn: getPropertiesByIds,
-    params: allIds.length ? (allIds as any) : (undefined as any),
+    params: { ids: allIds },
+    skip: allIds.length === 0,
   });
   const propertyById = React.useMemo(() => {
     const map: Record<string, any> = {};
@@ -96,7 +116,7 @@ export default function MyBookingsScreen() {
                   >
                     {p?.image ? (
                       <Image
-                        source={{ uri: p.image }}
+                        source={getImageSource(p.image as string | number)}
                         className="w-full h-28 rounded-md"
                       />
                     ) : null}

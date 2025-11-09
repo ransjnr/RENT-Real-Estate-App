@@ -95,6 +95,7 @@ export const UserDataProvider = ({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviews, setReviews] = useState<Record<PropertyId, Review[]>>({});
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -113,7 +114,11 @@ export const UserDataProvider = ({
         if (b) setBookings(JSON.parse(b));
         if (r) setReviews(JSON.parse(r));
         if (n) setNotifications(JSON.parse(n));
-      } catch {}
+      } catch (error) {
+        console.error("[UserDataProvider] Error loading data:", error);
+      } finally {
+        setIsInitialized(true);
+      }
     })();
   }, []);
 
@@ -331,6 +336,7 @@ export const UserDataProvider = ({
     ]
   );
 
+  // Always provide the context value, even during initialization
   return (
     <UserDataContext.Provider value={value}>
       {children}

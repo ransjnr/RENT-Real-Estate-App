@@ -1,6 +1,7 @@
 import GalleryCarousel from "@/components/GalleryCarousel";
 import MapPreview from "@/components/MapPreview";
 import Reviews from "@/components/Reviews";
+import images from "@/constants/images";
 import { getPropertiesByIds } from "@/lib/appwrite";
 import { useAppwrite } from "@/lib/useAppwrite";
 import { useUserData } from "@/lib/user-data";
@@ -9,23 +10,41 @@ import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Image,
+  ImageSourcePropType,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
+// Helper function to get image source - handles both local assets (number) and URIs (string)
+const getImageSource = (image: string | number): ImageSourcePropType => {
+  if (typeof image === "number") {
+    // Local asset (require)
+    return image;
+  }
+  if (
+    typeof image === "string" &&
+    (image.startsWith("http") || image.startsWith("https"))
+  ) {
+    // Remote URI
+    return { uri: image };
+  }
+  // Fallback to local asset if it's a string but not a URI
+  return images.newYork;
+};
+
 const Property = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { wishlist, favorites, toggleFavorite, toggleWishlist } = useUserData();
   const { data, loading, refetch } = useAppwrite<any[], string[]>({
     fn: getPropertiesByIds,
-    params: [id as string] as any,
-    skip: true,
+    params: { ids: id ? [id as string] : [] },
+    skip: !id,
   });
 
   useEffect(() => {
-    if (id) refetch([id] as any);
+    if (id) refetch({ ids: [id as string] });
   }, [id, refetch]);
 
   const item = data?.[0];
@@ -50,7 +69,10 @@ const Property = () => {
       (item as any).gallery.length > 0 ? (
         <GalleryCarousel images={(item as any).gallery} />
       ) : (
-        <Image source={{ uri: item.image }} className="w-full h-64" />
+        <Image
+          source={getImageSource(item.image as string | number)}
+          className="w-full h-64"
+        />
       )}
       <View className="px-5 py-4">
         <View className="flex-row items-center justify-between">

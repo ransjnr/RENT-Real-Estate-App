@@ -22,9 +22,10 @@ export default function ChatScreen() {
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const listRef = useRef<FlatList>(null as any);
-  const { data: prop } = useAppwrite<any[], string[]>({
+  const { data: prop } = useAppwrite<any[], { ids: string[] }>({
     fn: getPropertiesByIds,
-    params: id ? ([id] as any) : (undefined as any),
+    params: { ids: id ? [id] : [] },
+    skip: !id,
   });
   const item = prop?.[0];
   const list = useMemo(

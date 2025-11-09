@@ -22,7 +22,8 @@ export default function BookProperty() {
   const [checkOut, setCheckOut] = useState("");
   const { data: propData } = useAppwrite<any[], string[]>({
     fn: getPropertiesByIds,
-    params: id ? ([id as string] as any) : (undefined as any),
+    params: { ids: id ? [id as string] : [] },
+    skip: !id,
   });
   const price = useMemo(() => {
     const p = propData?.[0]?.price;

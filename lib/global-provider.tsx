@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext, useEffect } from "react";
 
 import { AppUser, getCurrentUser } from "./appwrite";
 import { useAppwrite } from "./useAppwrite";
@@ -21,11 +21,21 @@ export const GlobalProvider = ({ children }: GlobalProviderProps) => {
     data: user,
     loading,
     refetch,
-  } = useAppwrite({
+  } = useAppwrite<AppUser | null, Record<string, never>>({
     fn: getCurrentUser,
+    params: {} as Record<string, never>,
   });
 
   const isLoggedIn = !!user;
+
+  // Log auth state changes for debugging
+  useEffect(() => {
+    console.log("[GlobalProvider] Auth state:", {
+      isLoggedIn,
+      loading,
+      hasUser: !!user,
+    });
+  }, [isLoggedIn, loading, user]);
 
   return (
     <GlobalContext.Provider

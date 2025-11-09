@@ -10,7 +10,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -121,99 +120,84 @@ export default function VerifyScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }}
+          className="flex-1 px-6 py-4 justify-center"
         >
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }}
-            className="flex-1 px-6 py-8"
-          >
-            {/* Logo Section */}
-            <View className="items-center mt-8 mb-8">
-              <View className="w-20 h-20 bg-primary-300 rounded-3xl items-center justify-center mb-4 shadow-lg">
-                <Text className="text-3xl font-rubik-bold text-white">R</Text>
-              </View>
-              <Text className="text-3xl font-rubik-bold text-black-300 mb-2">
-                RENT
+          {/* Logo Section */}
+          <View className="items-center mb-4">
+            <Image
+              source={images.logo}
+              className="w-32 h-32 mb-2"
+              resizeMode="contain"
+            />
+          </View>
+
+          <View className="mb-4">
+            <Text className="text-2xl font-rubik-bold text-black-300 mb-2">
+              Verify Your Email
+            </Text>
+            <Text className="text-base font-rubik text-black-200 mb-2">
+              We've sent a verification code to:
+            </Text>
+            {params.email && (
+              <Text className="text-base font-rubik-bold text-primary-300 mb-4">
+                {params.email}
               </Text>
+            )}
+            <Text className="text-base font-rubik text-black-200 mb-4">
+              Please enter the 6-digit code below
+            </Text>
+
+            {/* Code Input */}
+            <View className="flex-row justify-between mb-4">
+              {code.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputRefs.current[index] = ref)}
+                  className="w-12 h-14 border border-primary-200 rounded-xl text-center text-xl font-rubik-bold text-black-300 bg-primary-50"
+                  value={digit}
+                  onChangeText={(value) => handleCodeChange(value, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  selectTextOnFocus
+                />
+              ))}
             </View>
 
-            {/* Illustration */}
-            <View className="items-center mb-8">
-              <Image
-                source={images.onboarding}
-                className="w-56 h-56"
-                resizeMode="contain"
-              />
-            </View>
-
-            <View className="mb-6">
-              <Text className="text-2xl font-rubik-bold text-black-300 mb-2">
-                Verify Your Email
-              </Text>
-              <Text className="text-base font-rubik text-black-200 mb-2">
-                We've sent a verification code to:
-              </Text>
-              {params.email && (
-                <Text className="text-base font-rubik-bold text-primary-300 mb-6">
-                  {params.email}
+            {/* Verify Button */}
+            <TouchableOpacity
+              onPress={handleVerify}
+              disabled={loading || code.join("").length !== 6}
+              className={`bg-primary-300 rounded-xl py-3 items-center justify-center mb-3 ${
+                loading || code.join("").length !== 6 ? "opacity-50" : ""
+              }`}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-rubik-bold text-lg">
+                  Verify Email
                 </Text>
               )}
-              <Text className="text-base font-rubik text-black-200 mb-6">
-                Please enter the 6-digit code below
+            </TouchableOpacity>
+
+            <View className="flex-row items-center justify-center">
+              <Text className="text-black-200 font-rubik text-sm">
+                Didn't receive the code?{" "}
               </Text>
-
-              {/* Code Input */}
-              <View className="flex-row justify-between mb-6">
-                {code.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => (inputRefs.current[index] = ref)}
-                    className="w-12 h-14 border border-primary-200 rounded-xl text-center text-xl font-rubik-bold text-black-300 bg-primary-50"
-                    value={digit}
-                    onChangeText={(value) => handleCodeChange(value, index)}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    selectTextOnFocus
-                  />
-                ))}
-              </View>
-
-              {/* Verify Button */}
-              <TouchableOpacity
-                onPress={handleVerify}
-                disabled={loading || code.join("").length !== 6}
-                className={`bg-primary-300 rounded-xl py-4 items-center justify-center mb-4 ${
-                  loading || code.join("").length !== 6 ? "opacity-50" : ""
-                }`}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text className="text-white font-rubik-bold text-lg">
-                    Verify Email
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              <View className="flex-row items-center justify-center">
-                <Text className="text-black-200 font-rubik text-sm">
-                  Didn't receive the code?{" "}
+              <TouchableOpacity>
+                <Text className="text-primary-300 font-rubik-bold text-sm">
+                  Resend
                 </Text>
-                <TouchableOpacity>
-                  <Text className="text-primary-300 font-rubik-bold text-sm">
-                    Resend
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             </View>
-          </Animated.View>
-        </ScrollView>
+          </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

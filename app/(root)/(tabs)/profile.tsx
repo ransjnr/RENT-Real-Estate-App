@@ -64,6 +64,8 @@ const Profile = () => {
         console.log("[Profile] Logout successful, refetching user...");
         // Clear user data by refetching - this will return null and trigger redirect
         await refetch();
+        // Small delay to ensure state is updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
         console.log("[Profile] User refetched, should redirect now");
         // The AppLayout will automatically redirect to sign-in when isLoggedIn becomes false
       } else {
@@ -72,12 +74,14 @@ const Profile = () => {
           "[Profile] Logout returned false, clearing local state anyway"
         );
         await refetch();
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     } catch (error) {
       console.error("[Profile] Logout error:", error);
       // Even on error, try to clear local state
       try {
         await refetch();
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } catch (refetchError) {
         console.error("[Profile] Refetch error:", refetchError);
         Alert.alert(

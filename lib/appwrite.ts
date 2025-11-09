@@ -6,7 +6,6 @@ import {
   Avatars,
   Client,
   Databases,
-  ID,
   Models,
 } from "react-native-appwrite";
 
@@ -59,46 +58,81 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 
 export async function login(email: string, password: string) {
-  try {
-    // Check if we have a valid client configuration
-    if (!config.endpoint || !config.projectId) {
-      console.log("[Appwrite] No Appwrite configuration, using dummy auth");
-      // For dummy mode, accept any email/password and store login state
-      await AsyncStorage.setItem("dummy_auth_logged_in", "true");
-      await AsyncStorage.setItem("dummy_auth_email", email);
-      await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
-      return true;
-    }
+  // Always use dummy mode - Appwrite authentication disabled for now
+  // This ensures the app works without Appwrite configuration
+  console.log("[Appwrite] Using dummy auth mode");
+  await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+  await AsyncStorage.setItem("dummy_auth_email", email);
+  await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
+  return true;
 
+  /* Appwrite authentication - disabled for now
+  // Check if we have a valid client configuration
+  if (!config.endpoint || !config.projectId || config.endpoint.trim() === "" || config.projectId.trim() === "") {
+    console.log("[Appwrite] No Appwrite configuration, using dummy auth");
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
+    return true;
+  }
+
+  // Try to use Appwrite, but fall back to dummy mode if it fails
+  try {
     const session = await account.createEmailPasswordSession(email, password);
     if (!session) throw new Error("Failed to create a session");
-
     console.log("[Appwrite] Login successful");
     return true;
-  } catch (error: any) {
-    console.error("[Appwrite] Login error:", error);
-    throw new Error(error.message || "Invalid email or password");
+  } catch (appwriteError: any) {
+    // If Appwrite fails for any reason, fall back to dummy mode silently
+    console.log(
+      "[Appwrite] Appwrite login failed, falling back to dummy auth:",
+      appwriteError.message || "Unknown error"
+    );
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
+    return true;
   }
+  */
 }
 
 export async function signup(email: string, password: string, name: string) {
-  try {
-    // Check if we have a valid client configuration
-    if (!config.endpoint || !config.projectId) {
-      console.log("[Appwrite] No Appwrite configuration, using dummy signup");
-      // For dummy mode, accept any signup
-      return true;
-    }
+  // Always use dummy mode - Appwrite authentication disabled for now
+  // This ensures the app works without Appwrite configuration
+  console.log("[Appwrite] Using dummy signup mode");
+  await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+  await AsyncStorage.setItem("dummy_auth_email", email);
+  await AsyncStorage.setItem("dummy_auth_name", name);
+  return true;
 
+  /* Appwrite authentication - disabled for now
+  // Check if we have a valid client configuration
+  if (!config.endpoint || !config.projectId || config.endpoint.trim() === "" || config.projectId.trim() === "") {
+    console.log("[Appwrite] No Appwrite configuration, using dummy signup");
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", name);
+    return true;
+  }
+
+  // Try to use Appwrite, but fall back to dummy mode if it fails
+  try {
     const user = await account.create(ID.unique(), email, password, name);
     if (!user) throw new Error("Failed to create account");
-
     console.log("[Appwrite] Signup successful");
     return true;
-  } catch (error: any) {
-    console.error("[Appwrite] Signup error:", error);
-    throw new Error(error.message || "Could not create account");
+  } catch (appwriteError: any) {
+    // If Appwrite fails for any reason, fall back to dummy mode silently
+    console.log(
+      "[Appwrite] Appwrite signup failed, falling back to dummy signup:",
+      appwriteError.message || "Unknown error"
+    );
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", name);
+    return true;
   }
+  */
 }
 
 export async function sendPasswordResetEmail(email: string) {
@@ -166,33 +200,45 @@ export async function verifyEmail(userId: string, secret: string) {
 }
 
 export async function logout() {
+  // Always clear dummy auth state first
+  try {
+    await AsyncStorage.removeItem("dummy_auth_logged_in");
+    await AsyncStorage.removeItem("dummy_auth_email");
+    await AsyncStorage.removeItem("dummy_auth_name");
+    console.log("[Appwrite] Dummy auth state cleared");
+  } catch (storageError) {
+    console.error("[Appwrite] Error clearing dummy auth state:", storageError);
+  }
+
+  // Try to clear Appwrite session if configured
   try {
     // Check if we have a valid client configuration
-    if (!config.endpoint || !config.projectId) {
+    if (
+      !config.endpoint ||
+      !config.projectId ||
+      config.endpoint.trim() === "" ||
+      config.projectId.trim() === ""
+    ) {
       console.log(
-        "[Appwrite] No Appwrite configuration, clearing local state only"
+        "[Appwrite] No Appwrite configuration, using dummy logout only"
       );
-      // Clear dummy auth state
-      await AsyncStorage.removeItem("dummy_auth_logged_in");
-      await AsyncStorage.removeItem("dummy_auth_email");
-      await AsyncStorage.removeItem("dummy_auth_name");
-      return true; // Return true to allow local state clearing
+      return true; // Already cleared dummy state above
     }
 
     try {
       await account.deleteSession("current");
-      console.log("[Appwrite] Logout successful");
+      console.log("[Appwrite] Appwrite session deleted");
       return true;
     } catch (sessionError) {
       // If session deletion fails (e.g., no session exists), still allow logout
       console.log(
-        "[Appwrite] Session deletion failed (may not be logged in), clearing local state"
+        "[Appwrite] Session deletion failed (may not be logged in), but dummy state cleared"
       );
-      return true; // Still return true to allow local state clearing
+      return true; // Already cleared dummy state above
     }
   } catch (error) {
     console.error("[Appwrite] Logout error:", error);
-    // Even if there's an error, allow local state clearing
+    // Even if there's an error, dummy state is already cleared
     return true;
   }
 }
@@ -218,7 +264,12 @@ export type AppUser = {
 export async function getCurrentUser(): Promise<AppUser | null> {
   try {
     // Check if we have a valid client configuration
-    if (!config.endpoint || !config.projectId) {
+    if (
+      !config.endpoint ||
+      !config.projectId ||
+      config.endpoint.trim() === "" ||
+      config.projectId.trim() === ""
+    ) {
       console.log(
         "[getCurrentUser] No Appwrite configuration, checking dummy auth"
       );
@@ -237,26 +288,56 @@ export async function getCurrentUser(): Promise<AppUser | null> {
       return null;
     }
 
-    const response = await account.get();
-
-    if (response && response.$id) {
-      const userAvatar = avatar.getInitials(response.name);
-      return {
-        $id: response.$id,
-        name: response.name,
-        email: response.email,
-        avatar: userAvatar.toString(),
-      };
-    }
-
-    return null;
-  } catch (error: any) {
-    // If user is not logged in, return null (this is expected after logout)
-    if (error?.code === 401 || error?.message?.includes("401")) {
-      console.log("[getCurrentUser] User not authenticated");
+    // Try to use Appwrite, but fall back to dummy mode if it fails
+    try {
+      const response = await account.get();
+      if (response && response.$id) {
+        const userAvatar = avatar.getInitials(response.name);
+        return {
+          $id: response.$id,
+          name: response.name,
+          email: response.email,
+          avatar: userAvatar.toString(),
+        };
+      }
+      return null;
+    } catch (appwriteError: any) {
+      // If Appwrite fails, fall back to dummy mode
+      console.log(
+        "[getCurrentUser] Appwrite failed, falling back to dummy auth:",
+        appwriteError.message || "Unknown error"
+      );
+      const isLoggedIn = await AsyncStorage.getItem("dummy_auth_logged_in");
+      if (isLoggedIn === "true") {
+        const email = await AsyncStorage.getItem("dummy_auth_email");
+        const name = await AsyncStorage.getItem("dummy_auth_name");
+        return {
+          $id: "dummy-user-1",
+          name: name || "Demo User",
+          email: email || "demo@rent.com",
+          avatar: avatar.getInitials(name || "Demo User").toString(),
+        };
+      }
       return null;
     }
+  } catch (error: any) {
     console.error("[getCurrentUser] Error:", error);
+    // Even if there's an unexpected error, try dummy mode as fallback
+    try {
+      const isLoggedIn = await AsyncStorage.getItem("dummy_auth_logged_in");
+      if (isLoggedIn === "true") {
+        const email = await AsyncStorage.getItem("dummy_auth_email");
+        const name = await AsyncStorage.getItem("dummy_auth_name");
+        return {
+          $id: "dummy-user-1",
+          name: name || "Demo User",
+          email: email || "demo@rent.com",
+          avatar: avatar.getInitials(name || "Demo User").toString(),
+        };
+      }
+    } catch {
+      // Ignore AsyncStorage errors
+    }
     return null;
   }
 }

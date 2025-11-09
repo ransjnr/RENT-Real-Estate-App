@@ -1,3 +1,4 @@
+import images from "@/constants/images";
 import { signup } from "@/lib/appwrite";
 import { useGlobalContext } from "@/lib/global-provider";
 import { router } from "expo-router";
@@ -6,9 +7,9 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Image,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -111,163 +112,154 @@ export default function SignupScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }}
+          className="flex-1 px-6 py-4 justify-center"
         >
-          <Animated.View
-            style={{
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }}
-            className="flex-1 px-6 py-8"
-          >
-            {/* Logo Section */}
-            <View className="items-center mt-4 mb-6">
-              <View className="w-20 h-20 bg-primary-300 rounded-3xl items-center justify-center mb-3 shadow-lg">
-                <Text className="text-3xl font-rubik-bold text-white">R</Text>
-              </View>
-              <Text className="text-3xl font-rubik-bold text-black-300 mb-1">
-                RENT
+          {/* Logo Section */}
+          <View className="items-center mb-4">
+            <Image
+              source={images.logo}
+              className="w-32 h-32 mb-2"
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Form */}
+          <View className="mb-4">
+            <Text className="text-2xl font-rubik-bold text-black-300 mb-1">
+              Get Started
+            </Text>
+            <Text className="text-base font-rubik text-black-200 mb-4">
+              Sign up to find your perfect home
+            </Text>
+
+            {/* Name Input */}
+            <View className="mb-3">
+              <Text className="text-sm font-rubik-medium text-black-300 mb-2">
+                Full Name
               </Text>
-              <Text className="text-sm font-rubik text-black-200 text-center">
-                Create Your Account
+              <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-3 bg-primary-50">
+                <TextInput
+                  className="flex-1 text-black-300 font-rubik"
+                  placeholder="Enter your full name"
+                  placeholderTextColor="#8F90A6"
+                  autoCapitalize="words"
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
+            </View>
+
+            {/* Email Input */}
+            <View className="mb-3">
+              <Text className="text-sm font-rubik-medium text-black-300 mb-2">
+                Email Address
+              </Text>
+              <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-3 bg-primary-50">
+                <TextInput
+                  className="flex-1 text-black-300 font-rubik"
+                  placeholder="Enter your email"
+                  placeholderTextColor="#8F90A6"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View className="mb-3">
+              <Text className="text-sm font-rubik-medium text-black-300 mb-2">
+                Password
+              </Text>
+              <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-3 bg-primary-50">
+                <TextInput
+                  className="flex-1 text-black-300 font-rubik"
+                  placeholder="Create a password"
+                  placeholderTextColor="#8F90A6"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  className="ml-2"
+                >
+                  <Text className="text-primary-300 font-rubik-medium text-sm">
+                    {showPassword ? "Hide" : "Show"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text className="text-xs text-black-200 mt-1">
+                Must be at least 6 characters
               </Text>
             </View>
 
-            {/* Form */}
-            <View className="mb-6">
-              <Text className="text-2xl font-rubik-bold text-black-300 mb-1">
-                Get Started
+            {/* Confirm Password Input */}
+            <View className="mb-4">
+              <Text className="text-sm font-rubik-medium text-black-300 mb-2">
+                Confirm Password
               </Text>
-              <Text className="text-base font-rubik text-black-200 mb-6">
-                Sign up to find your perfect home
-              </Text>
-
-              {/* Name Input */}
-              <View className="mb-4">
-                <Text className="text-sm font-rubik-medium text-black-300 mb-2">
-                  Full Name
-                </Text>
-                <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-4 bg-primary-50">
-                  <TextInput
-                    className="flex-1 text-black-300 font-rubik"
-                    placeholder="Enter your full name"
-                    placeholderTextColor="#8F90A6"
-                    autoCapitalize="words"
-                    value={name}
-                    onChangeText={setName}
-                  />
-                </View>
-              </View>
-
-              {/* Email Input */}
-              <View className="mb-4">
-                <Text className="text-sm font-rubik-medium text-black-300 mb-2">
-                  Email Address
-                </Text>
-                <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-4 bg-primary-50">
-                  <TextInput
-                    className="flex-1 text-black-300 font-rubik"
-                    placeholder="Enter your email"
-                    placeholderTextColor="#8F90A6"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    value={email}
-                    onChangeText={setEmail}
-                  />
-                </View>
-              </View>
-
-              {/* Password Input */}
-              <View className="mb-4">
-                <Text className="text-sm font-rubik-medium text-black-300 mb-2">
-                  Password
-                </Text>
-                <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-4 bg-primary-50">
-                  <TextInput
-                    className="flex-1 text-black-300 font-rubik"
-                    placeholder="Create a password"
-                    placeholderTextColor="#8F90A6"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoComplete="password-new"
-                    value={password}
-                    onChangeText={setPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="ml-2"
-                  >
-                    <Text className="text-primary-300 font-rubik-medium text-sm">
-                      {showPassword ? "Hide" : "Show"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Text className="text-xs text-black-200 mt-1">
-                  Must be at least 6 characters
-                </Text>
-              </View>
-
-              {/* Confirm Password Input */}
-              <View className="mb-6">
-                <Text className="text-sm font-rubik-medium text-black-300 mb-2">
-                  Confirm Password
-                </Text>
-                <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-4 bg-primary-50">
-                  <TextInput
-                    className="flex-1 text-black-300 font-rubik"
-                    placeholder="Confirm your password"
-                    placeholderTextColor="#8F90A6"
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    autoComplete="password-new"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="ml-2"
-                  >
-                    <Text className="text-primary-300 font-rubik-medium text-sm">
-                      {showConfirmPassword ? "Hide" : "Show"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Sign Up Button */}
-              <TouchableOpacity
-                onPress={handleSignup}
-                disabled={loading}
-                className={`bg-primary-300 rounded-xl py-4 items-center justify-center mb-4 ${
-                  loading ? "opacity-50" : ""
-                }`}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text className="text-white font-rubik-bold text-lg">
-                    Create Account
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Login Link */}
-              <View className="flex-row items-center justify-center mt-4">
-                <Text className="text-black-200 font-rubik text-sm">
-                  Already have an account?{" "}
-                </Text>
-                <TouchableOpacity onPress={() => router.push("/auth/login")}>
-                  <Text className="text-primary-300 font-rubik-bold text-sm">
-                    Sign In
+              <View className="flex-row items-center border border-primary-200 rounded-xl px-4 py-3 bg-primary-50">
+                <TextInput
+                  className="flex-1 text-black-300 font-rubik"
+                  placeholder="Confirm your password"
+                  placeholderTextColor="#8F90A6"
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="ml-2"
+                >
+                  <Text className="text-primary-300 font-rubik-medium text-sm">
+                    {showConfirmPassword ? "Hide" : "Show"}
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </Animated.View>
-        </ScrollView>
+
+            {/* Sign Up Button */}
+            <TouchableOpacity
+              onPress={handleSignup}
+              disabled={loading}
+              className={`bg-primary-300 rounded-xl py-3 items-center justify-center mb-3 ${
+                loading ? "opacity-50" : ""
+              }`}
+            >
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-rubik-bold text-lg">
+                  Create Account
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Login Link */}
+            <View className="flex-row items-center justify-center">
+              <Text className="text-black-200 font-rubik text-sm">
+                Already have an account?{" "}
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/auth/login")}>
+                <Text className="text-primary-300 font-rubik-bold text-sm">
+                  Sign In
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

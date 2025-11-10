@@ -17,7 +17,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.baffuohasareb.rent"
     },
     "web": {
       "output": "static",
@@ -45,12 +46,24 @@
             "./assets/fonts/Rubik-ExtraBold.ttf"
           ]
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "916e0697-f514-461c-b595-86e28e0c3f7a"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/916e0697-f514-461c-b595-86e28e0c3f7a"
     }
   }
 }

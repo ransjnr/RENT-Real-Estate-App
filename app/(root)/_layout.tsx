@@ -6,7 +6,7 @@ export default function AppLayout() {
 
   // Do not block the UI while auth is loading; only redirect after it finishes
   if (!loading && !isLoggedIn) {
-    return <Redirect href="/sign-in" />;
+    return <Redirect href="/auth/login" />;
   }
 
   return <Slot />;

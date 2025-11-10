@@ -1,13 +1,12 @@
+import { dummyProperties } from "@/constants/dummy-data";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
 import {
   Account,
   Avatars,
   Client,
   Databases,
   Models,
-  OAuthProvider,
-  Query,
 } from "react-native-appwrite";
 
 export const config = {
@@ -58,57 +57,189 @@ export const avatar = new Avatars(client);
 export const account = new Account(client);
 export const databases = new Databases(client);
 
-export async function login() {
+export async function login(email: string, password: string) {
+  // Always use dummy mode - Appwrite authentication disabled for now
+  // This ensures the app works without Appwrite configuration
+  console.log("[Appwrite] Using dummy auth mode");
+  await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+  await AsyncStorage.setItem("dummy_auth_email", email);
+  await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
+  return true;
+
+  /* Appwrite authentication - disabled for now
+  // Check if we have a valid client configuration
+  if (!config.endpoint || !config.projectId || config.endpoint.trim() === "" || config.projectId.trim() === "") {
+    console.log("[Appwrite] No Appwrite configuration, using dummy auth");
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
+    return true;
+  }
+
+  // Try to use Appwrite, but fall back to dummy mode if it fails
   try {
-    // Ensure WebBrowser can complete the auth session on iOS
-    WebBrowser.maybeCompleteAuthSession();
-
-    const redirectUri = Linking.createURL("/");
-    const response = await account.createOAuth2Token(
-      OAuthProvider.Google,
-      redirectUri
+    const session = await account.createEmailPasswordSession(email, password);
+    if (!session) throw new Error("Failed to create a session");
+    console.log("[Appwrite] Login successful");
+    return true;
+  } catch (appwriteError: any) {
+    // If Appwrite fails for any reason, fall back to dummy mode silently
+    console.log(
+      "[Appwrite] Appwrite login failed, falling back to dummy auth:",
+      appwriteError.message || "Unknown error"
     );
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", email.split("@")[0]);
+    return true;
+  }
+  */
+}
 
-    if (!response) throw new Error("Failed to login");
+export async function signup(email: string, password: string, name: string) {
+  // Always use dummy mode - Appwrite authentication disabled for now
+  // This ensures the app works without Appwrite configuration
+  console.log("[Appwrite] Using dummy signup mode");
+  await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+  await AsyncStorage.setItem("dummy_auth_email", email);
+  await AsyncStorage.setItem("dummy_auth_name", name);
+  return true;
 
-    const browserResult = await WebBrowser.openAuthSessionAsync(
-      response.toString(),
-      redirectUri
+  /* Appwrite authentication - disabled for now
+  // Check if we have a valid client configuration
+  if (!config.endpoint || !config.projectId || config.endpoint.trim() === "" || config.projectId.trim() === "") {
+    console.log("[Appwrite] No Appwrite configuration, using dummy signup");
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", name);
+    return true;
+  }
+
+  // Try to use Appwrite, but fall back to dummy mode if it fails
+  try {
+    const user = await account.create(ID.unique(), email, password, name);
+    if (!user) throw new Error("Failed to create account");
+    console.log("[Appwrite] Signup successful");
+    return true;
+  } catch (appwriteError: any) {
+    // If Appwrite fails for any reason, fall back to dummy mode silently
+    console.log(
+      "[Appwrite] Appwrite signup failed, falling back to dummy signup:",
+      appwriteError.message || "Unknown error"
     );
-    if (
-      browserResult.type !== "success" ||
-      !("url" in browserResult) ||
-      !browserResult.url
-    ) {
-      throw new Error("Failed to login");
+    await AsyncStorage.setItem("dummy_auth_logged_in", "true");
+    await AsyncStorage.setItem("dummy_auth_email", email);
+    await AsyncStorage.setItem("dummy_auth_name", name);
+    return true;
+  }
+  */
+}
+
+export async function sendPasswordResetEmail(email: string) {
+  try {
+    // Check if we have a valid client configuration
+    if (!config.endpoint || !config.projectId) {
+      console.log("[Appwrite] No Appwrite configuration, using dummy reset");
+      // For dummy mode, always return true
+      return true;
     }
 
-    // Parse the callback URL returned by the OAuth flow
-    const callbackUrl = new URL(browserResult.url);
+    await account.createRecovery(
+      email,
+      `${Linking.createURL("/auth/reset-password")}`
+    );
 
-    const secret = callbackUrl.searchParams.get("secret")?.toString();
-    const userId = callbackUrl.searchParams.get("userId")?.toString();
-
-    if (!secret || !userId) throw new Error("Failed to login");
-
-    const session = await account.createSession(userId, secret);
-
-    if (!session) throw new Error("Failed to create a session");
-
+    console.log("[Appwrite] Password reset email sent");
     return true;
-  } catch (error) {
-    console.error(error);
-    return false;
+  } catch (error: any) {
+    console.error("[Appwrite] Password reset error:", error);
+    throw new Error(error.message || "Could not send reset email");
+  }
+}
+
+export async function resetPassword(
+  userId: string,
+  secret: string,
+  newPassword: string
+) {
+  try {
+    // Check if we have a valid client configuration
+    if (!config.endpoint || !config.projectId) {
+      console.log("[Appwrite] No Appwrite configuration, using dummy reset");
+      return true;
+    }
+
+    await account.updateRecovery(userId, secret, newPassword);
+
+    console.log("[Appwrite] Password reset successful");
+    return true;
+  } catch (error: any) {
+    console.error("[Appwrite] Password reset error:", error);
+    throw new Error(error.message || "Could not reset password");
+  }
+}
+
+export async function verifyEmail(userId: string, secret: string) {
+  try {
+    // Check if we have a valid client configuration
+    if (!config.endpoint || !config.projectId) {
+      console.log(
+        "[Appwrite] No Appwrite configuration, using dummy verification"
+      );
+      return true;
+    }
+
+    await account.updateVerification(userId, secret);
+
+    console.log("[Appwrite] Email verification successful");
+    return true;
+  } catch (error: any) {
+    console.error("[Appwrite] Email verification error:", error);
+    throw new Error(error.message || "Could not verify email");
   }
 }
 
 export async function logout() {
+  // Always clear dummy auth state first
   try {
-    await account.deleteSession("current");
-    return true;
+    await AsyncStorage.removeItem("dummy_auth_logged_in");
+    await AsyncStorage.removeItem("dummy_auth_email");
+    await AsyncStorage.removeItem("dummy_auth_name");
+    console.log("[Appwrite] Dummy auth state cleared");
+  } catch (storageError) {
+    console.error("[Appwrite] Error clearing dummy auth state:", storageError);
+  }
+
+  // Try to clear Appwrite session if configured
+  try {
+    // Check if we have a valid client configuration
+    if (
+      !config.endpoint ||
+      !config.projectId ||
+      config.endpoint.trim() === "" ||
+      config.projectId.trim() === ""
+    ) {
+      console.log(
+        "[Appwrite] No Appwrite configuration, using dummy logout only"
+      );
+      return true; // Already cleared dummy state above
+    }
+
+    try {
+      await account.deleteSession("current");
+      console.log("[Appwrite] Appwrite session deleted");
+      return true;
+    } catch (sessionError) {
+      // If session deletion fails (e.g., no session exists), still allow logout
+      console.log(
+        "[Appwrite] Session deletion failed (may not be logged in), but dummy state cleared"
+      );
+      return true; // Already cleared dummy state above
+    }
   } catch (error) {
-    console.error(error);
-    return false;
+    console.error("[Appwrite] Logout error:", error);
+    // Even if there's an error, dummy state is already cleared
+    return true;
   }
 }
 
@@ -132,21 +263,81 @@ export type AppUser = {
 
 export async function getCurrentUser(): Promise<AppUser | null> {
   try {
-    const response = await account.get();
-
-    if (response && response.$id) {
-      const userAvatar = avatar.getInitials(response.name);
-      return {
-        $id: response.$id,
-        name: response.name,
-        email: response.email,
-        avatar: userAvatar.toString(),
-      };
+    // Check if we have a valid client configuration
+    if (
+      !config.endpoint ||
+      !config.projectId ||
+      config.endpoint.trim() === "" ||
+      config.projectId.trim() === ""
+    ) {
+      console.log(
+        "[getCurrentUser] No Appwrite configuration, checking dummy auth"
+      );
+      // For dummy mode, check if user is logged in
+      const isLoggedIn = await AsyncStorage.getItem("dummy_auth_logged_in");
+      if (isLoggedIn === "true") {
+        const email = await AsyncStorage.getItem("dummy_auth_email");
+        const name = await AsyncStorage.getItem("dummy_auth_name");
+        return {
+          $id: "dummy-user-1",
+          name: name || "Demo User",
+          email: email || "demo@rent.com",
+          avatar: avatar.getInitials(name || "Demo User").toString(),
+        };
+      }
+      return null;
     }
 
-    return null;
-  } catch (error) {
-    console.error(error);
+    // Try to use Appwrite, but fall back to dummy mode if it fails
+    try {
+      const response = await account.get();
+      if (response && response.$id) {
+        const userAvatar = avatar.getInitials(response.name);
+        return {
+          $id: response.$id,
+          name: response.name,
+          email: response.email,
+          avatar: userAvatar.toString(),
+        };
+      }
+      return null;
+    } catch (appwriteError: any) {
+      // If Appwrite fails, fall back to dummy mode
+      console.log(
+        "[getCurrentUser] Appwrite failed, falling back to dummy auth:",
+        appwriteError.message || "Unknown error"
+      );
+      const isLoggedIn = await AsyncStorage.getItem("dummy_auth_logged_in");
+      if (isLoggedIn === "true") {
+        const email = await AsyncStorage.getItem("dummy_auth_email");
+        const name = await AsyncStorage.getItem("dummy_auth_name");
+        return {
+          $id: "dummy-user-1",
+          name: name || "Demo User",
+          email: email || "demo@rent.com",
+          avatar: avatar.getInitials(name || "Demo User").toString(),
+        };
+      }
+      return null;
+    }
+  } catch (error: any) {
+    console.error("[getCurrentUser] Error:", error);
+    // Even if there's an unexpected error, try dummy mode as fallback
+    try {
+      const isLoggedIn = await AsyncStorage.getItem("dummy_auth_logged_in");
+      if (isLoggedIn === "true") {
+        const email = await AsyncStorage.getItem("dummy_auth_email");
+        const name = await AsyncStorage.getItem("dummy_auth_name");
+        return {
+          $id: "dummy-user-1",
+          name: name || "Demo User",
+          email: email || "demo@rent.com",
+          avatar: avatar.getInitials(name || "Demo User").toString(),
+        };
+      }
+    } catch {
+      // Ignore AsyncStorage errors
+    }
     return null;
   }
 }
@@ -161,25 +352,15 @@ export async function getLatestProperties(): Promise<
     type: string;
   })[]
 > {
-  try {
-    const result = await databases.listDocuments(
-      config.databaseId!,
-      config.propertiesCollectionId!,
-      [Query.orderAsc("$createdAt"), Query.limit(5)]
-    );
-
-    return result.documents as unknown as (Models.Document & {
-      image: string;
-      name: string;
-      address: string;
-      price: number;
-      rating: number;
-      type: string;
-    })[];
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
+  // Return dummy data - latest 5 properties
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const latest = [...dummyProperties]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 5);
+      resolve(latest as any);
+    }, 300); // Simulate network delay
+  });
 }
 
 export async function getProperties(params?: {
@@ -202,105 +383,59 @@ export async function getProperties(params?: {
   const {
     filter = "",
     query = "",
-    limit,
+    limit = 100,
     priceMin,
     priceMax,
     minRating,
   } = params || {};
-  console.log("Search params:", { filter, query, limit });
 
-  try {
-    const buildQuery = [Query.orderDesc("$createdAt")];
+  // Use dummy data instead of Appwrite
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      let filtered = [...dummyProperties];
 
-    if (filter && filter !== "All") {
-      buildQuery.push(Query.equal("type", filter));
-    }
+      // Filter by type
+      if (filter && filter !== "All") {
+        filtered = filtered.filter((p) => p.type === filter);
+      }
 
-    if (query && query.trim() !== "") {
-      console.log("Adding search query for:", query);
-      // Try multiple search approaches for better results
-      const searchQueries = [];
-
-      // Direct search
-      searchQueries.push(
-        Query.or([
-          Query.search("name", query),
-          Query.search("address", query),
-          Query.search("type", query),
-        ])
-      );
-
-      // If query is a number, also search for "Property X" format
-      if (!isNaN(Number(query))) {
-        searchQueries.push(
-          Query.or([
-            Query.search("name", `Property ${query}`),
-            Query.search("address", `City ${query}`),
-          ])
+      // Search query
+      if (query && query.trim() !== "") {
+        const searchLower = query.toLowerCase();
+        filtered = filtered.filter(
+          (p) =>
+            p.name.toLowerCase().includes(searchLower) ||
+            p.address.toLowerCase().includes(searchLower) ||
+            p.type.toLowerCase().includes(searchLower)
         );
       }
 
-      // If multiple search approaches, combine them with OR
-      if (searchQueries.length > 1) {
-        buildQuery.push(Query.or(searchQueries));
-      } else {
-        buildQuery.push(searchQueries[0]);
+      // Price range
+      if (typeof priceMin === "number") {
+        filtered = filtered.filter((p) => p.price >= priceMin);
       }
-    } else {
-      console.log("No search query provided");
-    }
+      if (typeof priceMax === "number") {
+        filtered = filtered.filter((p) => p.price <= priceMax);
+      }
 
-    // Price range
-    if (
-      typeof priceMin === "number" &&
-      typeof priceMax === "number" &&
-      priceMax >= priceMin
-    ) {
-      // between is inclusive
-      // @ts-ignore
-      buildQuery.push(Query.between("price", priceMin, priceMax));
-    } else if (typeof priceMin === "number") {
-      // @ts-ignore
-      buildQuery.push(Query.greaterThanEqual("price", priceMin));
-    } else if (typeof priceMax === "number") {
-      // @ts-ignore
-      buildQuery.push(Query.lessThanEqual("price", priceMax));
-    }
+      // Minimum rating
+      if (typeof minRating === "number") {
+        filtered = filtered.filter((p) => p.rating >= minRating);
+      }
 
-    // Minimum rating
-    if (typeof minRating === "number") {
-      // @ts-ignore
-      buildQuery.push(Query.greaterThanEqual("rating", minRating));
-    }
+      // Apply limit
+      if (limit) {
+        filtered = filtered.slice(0, limit);
+      }
 
-    if (limit) {
-      buildQuery.push(Query.limit(limit));
-    }
-
-    console.log("Build query:", buildQuery);
-
-    const result = await databases.listDocuments(
-      config.databaseId!,
-      config.propertiesCollectionId!,
-      buildQuery
-    );
-
-    console.log("Search results:", result.documents.length);
-    return result.documents as unknown as (Models.Document & {
-      image: string;
-      name: string;
-      address: string;
-      price: number;
-      rating: number;
-      type: string;
-    })[];
-  } catch (error) {
-    console.error("Search error:", error);
-    return [];
-  }
+      resolve(filtered as any);
+    }, 300); // Simulate network delay
+  });
 }
 
-export async function getPropertiesByIds(ids: string[]): Promise<
+export async function getPropertiesByIds(
+  params?: string[] | { ids?: string[] }
+): Promise<
   (Models.Document & {
     image: string;
     name: string;
@@ -310,23 +445,30 @@ export async function getPropertiesByIds(ids: string[]): Promise<
     type: string;
   })[]
 > {
-  if (!ids || ids.length === 0) return [];
-  try {
-    const result = await databases.listDocuments(
-      config.databaseId!,
-      config.propertiesCollectionId!,
-      [Query.equal("$id", ids)]
-    );
-    return result.documents as unknown as (Models.Document & {
-      image: string;
-      name: string;
-      address: string;
-      price: number;
-      rating: number;
-      type: string;
-    })[];
-  } catch (error) {
-    console.error("getPropertiesByIds error:", error);
+  // Handle both direct array call and object params from useAppwrite
+  let ids: string[] | undefined;
+
+  if (Array.isArray(params)) {
+    // Direct array call (backward compatibility)
+    ids = params;
+  } else if (params && typeof params === "object" && "ids" in params) {
+    // Object params from useAppwrite
+    ids = params.ids;
+  } else {
+    ids = undefined;
+  }
+
+  // Handle undefined, null, or empty arrays
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
     return [];
   }
+
+  // Use dummy data instead of Appwrite
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const validIds = ids!.filter((id) => id && typeof id === "string");
+      const found = dummyProperties.filter((p) => validIds.includes(p.$id));
+      resolve(found as any);
+    }, 200); // Simulate network delay
+  });
 }

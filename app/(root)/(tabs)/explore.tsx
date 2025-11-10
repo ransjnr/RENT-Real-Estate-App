@@ -42,7 +42,8 @@ const Explore = () => {
 
   useEffect(() => {
     refetch(params);
-  }, [params, refetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
 
   const filtered = useMemo(() => {
     if (!properties) return [] as any[];

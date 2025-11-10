@@ -24,14 +24,16 @@ export default function WishlistScreen() {
     [tab, wishlist, favorites]
   );
 
-  const { data, loading, refetch } = useAppwrite<any[], string[]>({
+  const { data, loading, refetch } = useAppwrite<any[], { ids: string[] }>({
     fn: getPropertiesByIds,
-    params: ids as any,
-    skip: true,
+    params: { ids },
+    skip: ids.length === 0,
   });
 
   useEffect(() => {
-    refetch(ids as any);
+    if (ids.length > 0) {
+      refetch({ ids });
+    }
   }, [ids.join(","), refetch]);
 
   return (
@@ -87,10 +89,3 @@ export default function WishlistScreen() {
     </View>
   );
 }
-
-
-
-
-
-
-

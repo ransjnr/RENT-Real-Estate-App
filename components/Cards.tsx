@@ -2,11 +2,17 @@ import icons from "@/constants/icons";
 import images from "@/constants/images";
 import { useUserData } from "@/lib/user-data";
 import React, { useMemo } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ImageSourcePropType,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Models } from "react-native-appwrite";
 
 interface Property extends Models.Document {
-  image: string;
+  image: string | number;
   name: string;
   address: string;
   price: number;
@@ -19,6 +25,23 @@ interface Props {
   item: Property;
 }
 
+// Helper function to get image source - handles both local assets (number) and URIs (string)
+const getImageSource = (image: string | number): ImageSourcePropType => {
+  if (typeof image === "number") {
+    // Local asset (require)
+    return image;
+  }
+  if (
+    typeof image === "string" &&
+    (image.startsWith("http") || image.startsWith("https"))
+  ) {
+    // Remote URI
+    return { uri: image };
+  }
+  // Fallback to local asset if it's a string but not a URI
+  return images.newYork;
+};
+
 export const FeaturedCard = ({ item, onPress }: Props) => {
   const { wishlist, toggleWishlist } = useUserData();
   const wished = useMemo(() => wishlist.has(item.$id), [wishlist, item.$id]);
@@ -27,7 +50,10 @@ export const FeaturedCard = ({ item, onPress }: Props) => {
       onPress={onPress}
       className="flex flex-col items-start w-60 h-80 relative"
     >
-      <Image source={{ uri: item.image }} className="size-full rounded-2xl" />
+      <Image
+        source={getImageSource(item.image)}
+        className="size-full rounded-2xl"
+      />
       <Image
         source={images.cardGradient}
         className="size-full rounded-2xl absolute bottom-0"
@@ -78,7 +104,10 @@ export const Card = ({ item, onPress }: Props) => {
         </Text>
       </View>
 
-      <Image source={{ uri: item.image }} className="w-full h-40 rounded-lg" />
+      <Image
+        source={getImageSource(item.image)}
+        className="w-full h-40 rounded-lg"
+      />
 
       <View className="flex flex-col mt-2">
         <Text className="text-base font-rubik-bold text-black-300">

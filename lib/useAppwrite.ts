@@ -41,23 +41,32 @@ export const useAppwrite = <
         const errorMessage =
           err instanceof Error ? err.message : "An unknown error occurred";
         setError(errorMessage);
-        Alert.alert("Error", errorMessage);
+        console.error("[useAppwrite] Error:", err);
+        // Only show alert for non-skip calls to avoid spam
+        if (!skip) {
+          Alert.alert("Error", errorMessage);
+        }
       } finally {
         setLoading(false);
       }
     },
-    [fn]
+    [fn, skip]
   );
 
   useEffect(() => {
     if (!skip) {
       fetchData(params);
+    } else {
+      setLoading(false);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skip, JSON.stringify(params)]);
 
   const refetch = useCallback(
-    async (newParams?: P) => await fetchData(newParams),
-    [fetchData]
+    async (newParams?: P) => {
+      await fetchData(newParams || params);
+    },
+    [fetchData, params]
   );
 
   return { data, loading, error, refetch };

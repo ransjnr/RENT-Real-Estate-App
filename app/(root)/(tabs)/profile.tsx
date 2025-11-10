@@ -56,13 +56,39 @@ const Profile = () => {
   const [editOpen, setEditOpen] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(user?.name || "");
   const handleLogout = async () => {
-    const result = await logout();
+    try {
+      console.log("[Profile] Starting logout...");
+      const result = await logout();
 
-    if (result) {
-      Alert.alert("Logout successful");
-      refetch();
-    } else {
-      Alert.alert("Logout failed");
+      if (result) {
+        console.log("[Profile] Logout successful, refetching user...");
+        // Clear user data by refetching - this will return null and trigger redirect
+        await refetch();
+        // Small delay to ensure state is updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        console.log("[Profile] User refetched, should redirect now");
+        // The AppLayout will automatically redirect to sign-in when isLoggedIn becomes false
+      } else {
+        // If logout returns false, still try to clear local state
+        console.log(
+          "[Profile] Logout returned false, clearing local state anyway"
+        );
+        await refetch();
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    } catch (error) {
+      console.error("[Profile] Logout error:", error);
+      // Even on error, try to clear local state
+      try {
+        await refetch();
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } catch (refetchError) {
+        console.error("[Profile] Refetch error:", refetchError);
+        Alert.alert(
+          "Logout",
+          "Logged out locally. Please restart the app if issues persist."
+        );
+      }
     }
   };
 
@@ -82,9 +108,10 @@ const Profile = () => {
     [favoriteIds, wishlistIds, bookingPropertyIds]
   );
 
-  const { data: propsData } = useAppwrite<any[], string[]>({
+  const { data: propsData } = useAppwrite<any[], { ids: string[] }>({
     fn: getPropertiesByIds,
-    params: allIds.length ? (allIds as any) : (undefined as any),
+    params: { ids: allIds },
+    skip: allIds.length === 0,
   });
 
   const propertyById = React.useMemo(() => {

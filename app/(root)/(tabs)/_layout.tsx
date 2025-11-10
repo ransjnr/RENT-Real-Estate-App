@@ -60,11 +60,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Explore",
-          headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon icon={icons.search} focused={focused} title="Explore" />
-          ),
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
